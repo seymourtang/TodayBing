@@ -2,12 +2,12 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"sort"
+	"strconv"
 )
 
 type Image struct {
@@ -48,15 +48,16 @@ func main() {
 
 func GetLatest7Days(ctx *gin.Context) {
 	ch := make(chan Response, 7)
-	urls := make([]*Image, 0)
+	urls := make([]*Image, 0, 7)
 	for i := 0; i < 7; i++ {
-		url := fmt.Sprintf("https://cn.bing.com/HPImageArchive.aspx?format=js&idx=%d&n=1&mkt=zh-CN", i)
+		url := "https://cn.bing.com/HPImageArchive.aspx?format=js&idx=" + strconv.Itoa(i) + "&n=1&mkt=zh-CN"
 		go GetLatestDay(url, i, ch)
 	}
 	for i := 0; i < 7; i++ {
 		data := <-ch
 		urls = append(urls, data.Image[0])
 	}
+	close(ch)
 	sort.Sort(ImageList(urls))
 	ctx.JSON(200, urls)
 }
