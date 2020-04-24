@@ -1,5 +1,12 @@
 # TodayBing
+![Go](https://github.com/seymourtang/TodayBing/workflows/Go/badge.svg)
+
 Todaybing API repository.Get the beautiful pictures of the last 7 days from Bing.Have fun:)
+## Run 
+```
+GET /v1/todaybing
+```
+The Web API response is as follow:
 ```json
 [
   {
