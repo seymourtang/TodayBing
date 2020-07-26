@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/json-iterator/go"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+	jsoniter "github.com/json-iterator/go"
 )
 
 type Image struct {
@@ -24,7 +25,6 @@ const (
 )
 
 func main() {
-	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.GET("/v1/todaybing", GetLatest7Days)
 	if err := http.ListenAndServe(":5033", r); err != nil {
