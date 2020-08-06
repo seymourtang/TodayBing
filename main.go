@@ -50,7 +50,9 @@ func GetLatest7Days(ctx *gin.Context) {
 
 func GetLatestDay(url string, index int, ch chan Response) {
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
 	}
 	client := &http.Client{Transport: tr}
 	resp, err := client.Get(url)
