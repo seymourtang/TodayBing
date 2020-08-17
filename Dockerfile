@@ -4,7 +4,7 @@ RUN apk --no-cache add tzdata
 RUN  mkdir /app
 COPY . /app
 WORKDIR /app
-RUN GOPROXY="https://goproxy.io" CGO_ENABLED=0 GOOS=linux go build -o todaybing
+RUN  CGO_ENABLED=0 GOOS=linux go build -o todaybing ./cmd/
 
 ###
 FROM scratch as fianl

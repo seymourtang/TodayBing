@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todaybing-deployment
+  labels:
+    app: todaybing
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: todaybing
+  template:
+    metadata:
+      labels:
+        app: todaybing
+    spec:
+      containers:
+        - name: todaybing
+          image: seymourtang/todaybing:latest
+          imagePullPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todaybing-service
+  labels:
+    app: todaybing
+spec:
+  selector:
+    app: todaybing
+  ports:
+    - name: todaybing-port
+      protocol: TCP
+      port: 5033
+      targetPort: 5033
