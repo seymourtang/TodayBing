@@ -10,7 +10,6 @@ RUN  CGO_ENABLED=0 GOOS=linux go build -o todaybing ./cmd/
 FROM scratch as fianl
 COPY --from=build /app/todaybing .
 COPY --from=build /usr/share/zoneinfo /usr/share/zoneinfo
-ENV GIN_MODE=release
 ENV TZ=Asia/Shanghai
 EXPOSE 5033
 
