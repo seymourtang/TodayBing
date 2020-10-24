@@ -3,6 +3,7 @@ module TodayBing
 go 1.15
 
 require (
-	github.com/gin-gonic/gin v1.6.2
 	github.com/json-iterator/go v1.1.9
+	github.com/stretchr/testify v1.4.0 // indirect
+	gopkg.in/yaml.v2 v2.2.8 // indirect
 )
