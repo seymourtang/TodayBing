@@ -2,11 +2,10 @@ package main
 
 import (
 	"crypto/tls"
+	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 
-	"github.com/gin-gonic/gin"
 	jsoniter "github.com/json-iterator/go"
 )
 
@@ -26,18 +25,18 @@ const (
 )
 
 func main() {
-	r := gin.Default()
-	r.GET("/v1/todaybing", GetLatest7Days)
-	if err := http.ListenAndServe(":5033", r); err != nil {
+
+	http.HandleFunc("/v1/todaybing", GetLatest7Days)
+	if err := http.ListenAndServe(":5033", nil); err != nil {
 		log.Println(err)
 	}
 }
 
-func GetLatest7Days(ctx *gin.Context) {
+func GetLatest7Days(w http.ResponseWriter, r *http.Request) {
 	ch := make(chan Response, 7)
 	urls := make([]*Image, 7)
 	for i := 0; i < 7; i++ {
-		url := "https://cn.bing.com/HPImageArchive.aspx?format=js&idx=" + strconv.Itoa(i) + "&n=1&mkt=zh-CN"
+		url := fmt.Sprintf("https://cn.bing.com/HPImageArchive.aspx?format=js&idx=%d&n=1&mkt=zh-CN", i)
 		go GetLatestDay(url, i, ch)
 	}
 	for i := 0; i < 7; i++ {
@@ -45,7 +44,14 @@ func GetLatest7Days(ctx *gin.Context) {
 		urls[data.Image[0].Index] = data.Image[0]
 	}
 	close(ch)
-	ctx.JSON(200, urls)
+	bytes, err := jsoniter.Marshal(urls)
+	if err != nil {
+		log.Printf("marshal urls err:%s", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(bytes)
 }
 
 func GetLatestDay(url string, index int, ch chan Response) {
