@@ -25,14 +25,14 @@ const (
 )
 
 func main() {
-
+	log.SetFlags(log.LstdFlags)
 	http.HandleFunc("/v1/todaybing", GetLatest7Days)
 	if err := http.ListenAndServe(":5033", nil); err != nil {
 		log.Println(err)
 	}
 }
 
-func GetLatest7Days(w http.ResponseWriter, r *http.Request) {
+func GetLatest7Days(w http.ResponseWriter, _ *http.Request) {
 	ch := make(chan Response, 7)
 	urls := make([]*Image, 7)
 	for i := 0; i < 7; i++ {
@@ -50,7 +50,6 @@ func GetLatest7Days(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 	w.Write(bytes)
 }
 
@@ -66,7 +65,9 @@ func GetLatestDay(url string, index int, ch chan Response) {
 		log.Println(err)
 		ch <- Response{}
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	var response Response
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
