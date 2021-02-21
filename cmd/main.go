@@ -27,6 +27,12 @@ const (
 func main() {
 	log.SetFlags(log.LstdFlags)
 	http.HandleFunc("/v1/todaybing", GetLatest7Days)
+
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+
 	if err := http.ListenAndServe(":5033", nil); err != nil {
 		log.Println(err)
 	}
@@ -50,7 +56,7 @@ func GetLatest7Days(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.Write(bytes)
+	_, _ = w.Write(bytes)
 }
 
 func GetLatestDay(url string, index int, ch chan Response) {
