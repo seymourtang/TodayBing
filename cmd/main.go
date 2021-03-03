@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	jsoniter "github.com/json-iterator/go"
+	"github.com/rs/cors"
 )
 
 type Image struct {
@@ -26,14 +27,18 @@ const (
 
 func main() {
 	log.SetFlags(log.LstdFlags)
-	http.HandleFunc("/v1/todaybing", GetLatest7Days)
+	mux := http.NewServeMux()
 
-	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/todaybing", GetLatest7Days)
+
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	})
 
-	if err := http.ListenAndServe(":5033", nil); err != nil {
+	// Use default cors options
+	handler := cors.Default().Handler(mux)
+	if err := http.ListenAndServe(":5033", handler); err != nil {
 		log.Println(err)
 	}
 }
