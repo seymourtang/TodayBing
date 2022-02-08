@@ -26,7 +26,7 @@ const (
 )
 
 func main() {
-	log.SetFlags(log.LstdFlags)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/v1/todaybing", GetLatest7Days)
