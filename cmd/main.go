@@ -3,11 +3,15 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"sync"
+	"time"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/rs/cors"
+	"github.com/tidwall/gjson"
 )
 
 type Image struct {
@@ -15,10 +19,7 @@ type Image struct {
 	Url           string `json:"url"`
 	Copyright     string `json:"copyright"`
 	CopyrightLink string `json:"copyrightlink"`
-}
-
-type Response struct {
-	Image []*Image `json:"images"`
+	Title         string `json:"title"`
 }
 
 const (
@@ -44,48 +45,55 @@ func main() {
 }
 
 func GetLatest7Days(w http.ResponseWriter, _ *http.Request) {
-	ch := make(chan Response, 7)
-	urls := make([]*Image, 7)
+	urls := make([]*Image, 7, 7)
+	var wg sync.WaitGroup
 	for i := 0; i < 7; i++ {
+		i := i
 		url := fmt.Sprintf("https://cn.bing.com/HPImageArchive.aspx?format=js&idx=%d&n=1&mkt=zh-CN", i)
-		go GetLatestDay(url, i, ch)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			image, err := GetImageData(url)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			image.Index = i
+			urls[i] = image
+		}()
 	}
-	for i := 0; i < 7; i++ {
-		data := <-ch
-		urls[data.Image[0].Index] = data.Image[0]
-	}
-	close(ch)
-	bytes, err := jsoniter.Marshal(urls)
-	if err != nil {
-		log.Printf("marshal urls err:%s", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	_, _ = w.Write(bytes)
+	wg.Wait()
+	_ = json.NewEncoder(w).Encode(urls)
 }
 
-func GetLatestDay(url string, index int, ch chan Response) {
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
+
+func GetImageData(url string) (*Image, error) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 		},
 	}
-	client := &http.Client{Transport: tr}
+	client := &http.Client{
+		Timeout:   3 * time.Second,
+		Transport: tr,
+	}
 	resp, err := client.Get(url)
 	if err != nil {
-		log.Println(err)
-		ch <- Response{}
+		return nil, err
 	}
 	defer func() {
 		_ = resp.Body.Close()
 	}()
-	var response Response
-	var json = jsoniter.ConfigCompatibleWithStandardLibrary
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		log.Println(err)
-		ch <- Response{}
+	var image Image
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
 	}
-	response.Image[0].Index = index
-	response.Image[0].Url = urlBase + response.Image[0].Url
-	ch <- response
+	imageData := gjson.GetBytes(data, "images.0").String()
+	if err := json.UnmarshalFromString(imageData, &image); err != nil {
+		return nil, err
+	}
+	image.Url = urlBase + image.Url
+	return &image, nil
 }
