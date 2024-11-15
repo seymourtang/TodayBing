@@ -45,7 +45,7 @@ func main() {
 }
 
 func GetLatest7Days(w http.ResponseWriter, _ *http.Request) {
-	urls := make([]*Image, 7, 7)
+	urls := make([]*Image, 7)
 	var wg sync.WaitGroup
 	for i := 0; i < 7; i++ {
 		i := i
